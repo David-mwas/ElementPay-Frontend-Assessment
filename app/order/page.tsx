@@ -54,8 +54,12 @@ export default function OrderPage() {
       const data = await res.json();
       setOrder(data);
       startListeners(data.order_id);
-    } catch (e: any) {
-      setError(String(e.message || e));
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
       setProcessing(false);
     }
   }

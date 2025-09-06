@@ -5,7 +5,7 @@ export const orders = new Map<string, OrderRecord>();
 type SendFn = (payload: string) => void;
 export const subscribers = new Map<string, Set<SendFn>>();
 
-export function notifySubscribers(orderId: string, data: any) {
+export function notifySubscribers(orderId: string, data: unknown) {
   const set = subscribers.get(orderId);
   if (!set) return;
   const payload = JSON.stringify(data);
@@ -13,7 +13,7 @@ export function notifySubscribers(orderId: string, data: any) {
     try {
       send(payload);
     } catch (e) {
-      // ignore
+      console.warn("Failed to send SSE", e);
     }
   }
 }
