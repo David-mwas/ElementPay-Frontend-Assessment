@@ -18,6 +18,14 @@ This repository contains a minimal Next.js (App Router) + TypeScript implementat
 
 ---
 
+## clone repository
+
+```bash
+git clone https://github.com/David-mwas/ElementPay-Frontend-Assessment.git
+cd ElementPay-Frontend-Assessment
+npm i
+```
+
 ## Run locally
 
 1. Node 18+, npm
