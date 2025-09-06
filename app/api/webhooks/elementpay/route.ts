@@ -44,10 +44,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid_signature' }, { status: 401 });
   }
 
-  let body: any;
+  type WebhookBody = {
+    type: string;
+    data: {
+      order_id: string;
+      status: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+
+  let body: WebhookBody;
   try {
-    body = JSON.parse(raw);
+    body = JSON.parse(raw) as WebhookBody;
   } catch (e) {
+    console.error("Failed to parse webhook body", e);
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
@@ -56,17 +67,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid_event' }, { status: 400 });
   }
 
-  const order = orders.get(data.order_id);
+  type OrderStatus = 'settled' | 'failed' | 'created' | 'processing';
+
+  const order = orders.get(data.order_id) as (typeof orders extends Map<string, infer T> ? T & { status: OrderStatus; order_id: string } : { status: OrderStatus; order_id: string });
   if (!order) {
     return NextResponse.json({ error: 'order_not_found' }, { status: 404 });
   }
 
-  const newStatus = data.status;
+  const allowedStatuses: OrderStatus[] = ['settled', 'failed', 'created', 'processing'];
+  const newStatus = data.status as string;
+  if (!allowedStatuses.includes(newStatus as OrderStatus)) {
+    return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+  }
+
   if (order.status === 'settled' || order.status === 'failed') {
     return NextResponse.json({ ok: true });
   }
 
-  order.status = newStatus;
+  order.status = newStatus as OrderStatus;
   orders.set(order.order_id, order);
 
   notifySubscribers(order.order_id, { type, data: { order_id: order.order_id, status: order.status } });

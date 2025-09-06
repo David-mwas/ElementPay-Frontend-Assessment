@@ -25,10 +25,10 @@ export async function GET(
         encode(`data: ${JSON.stringify({ status: order.status })}\n\n`)
       );
 
-      interface Payload {
-        status: string;
-        [key: string]: unknown;
-      }
+      // interface Payload {
+      //   status: string;
+      //   [key: string]: unknown;
+      // }
 
       type SendFn = (payload: string) => void;
 
