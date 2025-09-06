@@ -1,9 +1,6 @@
 import { addSubscriber, orders } from "../../../_store";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { order_id: string } }
-) {
+export async function GET(req: Request, { params }: any) {
   const { order_id } = params;
   const order = orders.get(order_id);
   if (!order) {

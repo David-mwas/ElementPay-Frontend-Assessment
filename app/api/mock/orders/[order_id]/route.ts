@@ -1,14 +1,20 @@
-import { NextResponse } from 'next/server';
-import { orders, computeStatusForOrder } from '../../_store';
+import { NextResponse } from "next/server";
+import { orders, computeStatusForOrder } from "../../_store";
 
-export async function GET(req: Request, { params }: { params: { order_id: string } }) {
+export async function GET(req: Request, { params }: any) {
   const { order_id } = params;
   const order = orders.get(order_id);
   if (!order) {
-    return NextResponse.json({ error: 'order_not_found', message: `No order with id ${order_id}` }, { status: 404 });
+    return NextResponse.json(
+      { error: "order_not_found", message: `No order with id ${order_id}` },
+      { status: 404 }
+    );
   }
   const derived = computeStatusForOrder(order);
-  if ((derived === 'settled' || derived === 'failed') && order.status !== derived) {
+  if (
+    (derived === "settled" || derived === "failed") &&
+    order.status !== derived
+  ) {
     order.status = derived;
     orders.set(order_id, order);
   } else {
