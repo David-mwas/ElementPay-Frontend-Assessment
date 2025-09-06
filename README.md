@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ElementPay Frontend Assessment — Example Implementation
 
-## Getting Started
+This repository contains a minimal Next.js (App Router) + TypeScript implementation for the ElementPay frontend assessment.
 
-First, run the development server:
+## Features
+
+- MetaMask + WalletConnect support (via wagmi)
+- Order creation form (disabled unless a wallet is connected)
+- Mock API routes under `/api/mock/...` (in-memory)
+- Polling every 3s + SSE stream for webhook updates
+- Webhook verification with HMAC-SHA256 over raw body and timestamp freshness
+- 60s timeout + retry UX
+- README includes curl examples and .env.example
+
+---
+
+![alt text](public/image-2.png)![alt text](public/image.png)![alt text](public/image-1.png)
+
+---
+
+## Run locally
+
+1. Node 18+, npm
+2. Install:
+   ```bash
+   npm install
+   ```
+3. Copy `.env.example` to `.env.local` and set:
+   ```
+   WEBHOOK_SECRET=shh_super_secret
+   NEXT_PUBLIC_WC_PROJECT_ID=
+   ```
+4. Run:
+   ```bash
+   npm run dev
+   ```
+5. Open http://localhost:3000
+
+## Webhook curl examples
+
+Valid (should 2xx):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+curl -X POST http://localhost:3000/api/webhooks/elementpay \
+  -H 'Content-Type: application/json' \
+  -H 'X-Webhook-Signature: t=1710000000,v1=3QXTcQv0m0h4QkQ0L0w9ZsH1YFhZgMGnF0d9Xz4P7nQ=' \
+  -d '{"type":"order.settled","data":{"order_id":"ord_0xabc123","status":"settled"}}'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Invalid signature (should 401/403):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+curl -X POST http://localhost:3000/api/webhooks/elementpay \
+  -H 'Content-Type: application/json' \
+  -H 'X-Webhook-Signature: t=1710000300,v1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' \
+  -d '{"type":"order.failed","data":{"order_id":"ord_0xabc123","status":"failed"}}'
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notes & Assumptions
 
-## Learn More
+- In-memory store is used for the mock API (satisfies spec).
+- SSE is used to deliver webhook updates to the browser.
+- The `GET /api/mock/orders/:id` follows the time windows: 0-7s created, 8-17s processing, >=18s final (80% settled, 20% failed).
+- Small, focused codebase to make review easy.
 
-To learn more about Next.js, take a look at the following resources:
+## Tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+There is a simple test under `tests/webhook.test.ts` that computes HMAC and compares to the provided test vector example. Run `npm run test` after installing dev deps.
